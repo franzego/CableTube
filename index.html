@@ -133,10 +133,15 @@
       dateLabel.textContent = lastAfterYear !== null ? `${lastAfterYear} \u2013 ${sliderYear}` : `before ${sliderYear}`;
     };
 
-    // Search Logic
+    // ── Search Logic ─────────────────────────────────────────────────────
     const fetchVideos = query => {
       renderLoading();
       
+      if (typeof SERPER_API_KEY === 'undefined' || !SERPER_API_KEY) {
+        renderError('Oops! Something went wrong while searching. Please try again later.');
+        return;
+      }
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
