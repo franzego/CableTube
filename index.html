@@ -14,7 +14,7 @@
   <header id="masthead" role="banner">
 
     <!-- Logo -->
-    <a id="logo" href="#" title="Cable — retro YouTube search" aria-label="Cable home">
+    <a id="logo" href="index.html" title="Cable — retro YouTube search" aria-label="Cable home">
       <span id="logo-you">Cable</span><span id="logo-tube">Tube</span><span id="logo-vintage">Oldies</span>
     </a>
 
@@ -159,7 +159,7 @@
         if (err.name === 'AbortError') {
           renderError('Search timed out. Please check your network connection.');
         } else {
-          renderError('Search failed. Check your API key in config.js or try again.');
+          renderError('Oops! Something went wrong while searching. Please try again later.');
         }
       });
     };
@@ -262,6 +262,15 @@
     });
 
     const initFromURL = () => {
+      const navEntries = performance.getEntriesByType('navigation');
+      if (navEntries.length > 0 && navEntries[0].type === 'reload') {
+        window.history.replaceState(null, '', window.location.pathname);
+        restoreWelcomePanel();
+        updateSliderFill();
+        updateDateLabel();
+        return;
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('q')) {
         searchInput.value = urlParams.get('q');
