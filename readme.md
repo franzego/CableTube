@@ -7,3 +7,7 @@ They can be found using google indexes though. This is just a wrapper over it. D
 Anyway, it is nothing too serious. Try it and have fun digging through old Youtube content.
 
 Shoutout to serperAPI. Used them for the google search engine. Google's custom search engine API - to my dismay - is being discontinued.
+
+Find it here: https://franzego.github.io/CableTube/
+
+A little warning - Use it a little too much and you end up messing up your algorithm. Be Careful. :)
