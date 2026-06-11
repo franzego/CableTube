@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1024">
+  <title>Cable — retro YouTube search</title>
+  <meta name="description" content="Search for old YouTube videos from the golden era. Cable uses Google to surface pre-2019 YouTube content.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!--Header bar─ -->
+  <header id="masthead" role="banner">
+
+    <!-- Logo -->
+    <a id="logo" href="#" title="Cable — retro YouTube search" aria-label="Cable home">
+      <span id="logo-you">Cable</span><span id="logo-tube">Tube</span><span id="logo-vintage">Oldies</span>
+    </a>
+
+    <!-- Search form -->
+    <div id="search-form" role="search">
+      <input
+        id="search-input"
+        type="text"
+        autocomplete="off"
+        aria-label="Search query"
+      >
+      <button id="search-btn" type="button" aria-label="Search">Search</button>
+    </div>
+
+  </header>
+
+  <!--Slider row & date label─ -->
+  <div id="slider-row" role="complementary" aria-label="Year filter">
+    <label for="year-slider" class="visually-hidden">Filter: videos before year</label>
+    <div id="slider-wrap">
+      <input
+        id="year-slider"
+        type="range"
+        min="2005"
+        max="2019"
+        step="1"
+        value="2019"
+        aria-label="Year filter slider"
+      >
+      <span id="slider-tooltip" aria-hidden="true">2019</span>
+    </div>
+    <span id="date-label" aria-live="polite">before 2019</span>
+    <button id="slider-search-btn" type="button" aria-label="Search for selected year">
+      Search this year
+    </button>
+    <button id="copy-query-btn" type="button" style="display: none;">Copy query</button>
+  </div>
+
+  <!--Category bar -->
+  <div id="category-bar">
+    <button type="button" class="yt-pill" data-query='"old music concerts performances"'>Music</button>
+    <button type="button" class="yt-pill" data-query='"old sports highlights footage"'>Sports</button>
+    <button type="button" class="yt-pill" data-query='"old political speeches debates"'>Politics</button>
+    <button type="button" class="yt-pill" data-query='"old news broadcast"'>News</button>
+    <button type="button" class="yt-pill" data-query='"old documentary"'>Documentary</button>
+    <button type="button" class="yt-pill" data-query='"old cartoons animation"'>Cartoons</button>
+    <button type="button" class="yt-pill" data-query='"old comedy show"'>Comedy</button>
+    <button type="button" class="yt-pill" data-query='"old science lecture"'>Science</button>
+    <button type="button" class="yt-pill" data-query='"old war documentary"'>War</button>
+    <button type="button" class="yt-pill" data-query='"old african music culture"'>Africa</button>
+    <button type="button" class="yt-pill" data-query='"old celebrity interview"'>Interview</button>
+    <button type="button" class="yt-pill" data-query='"old movie trailer"'>Cinema</button>
+  </div>
+
+  <!--Results area─ -->
+  <main id="results-container">
+    <div id="results" role="region" aria-label="Search results">
+      <div id="welcome-panel">
+        <h1 class="welcome-title">VintageTube</h1>
+        <p class="welcome-subtitle">Search for old YouTube videos using Google's index.<br>Type what you're looking for.</p>
+        <div class="welcome-try-label">Try:</div>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;old c++ programming talks&quot;'); return false;">"old c++ programming talks"</a>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;80s michael jackson concerts&quot;'); return false;">"80s michael jackson concerts"</a>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;90s african football&quot;'); return false;">"90s african football"</a>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;retro cartoons&quot;'); return false;">"retro cartoons"</a>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;vintage political speeches&quot;'); return false;">"vintage political speeches"</a>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;old school basketball highlights&quot;'); return false;">"old school basketball highlights"</a>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;2000s documentary&quot;'); return false;">"2000s documentary"</a>
+        <a href="#" class="welcome-link" onclick="runSearch('&quot;classic war footage&quot;'); return false;">"classic war footage"</a>
+         <p class="welcome-disclaimer" style="margin-top: 24px; font-size: 11px; color: #777;">
+          <em>Tip: Use quotes around compound words or names (e.g., <code>"malcolm x"</code>) to search for the exact phrase.</em>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!--Scriptsload order required by spec -->
+  <script src="queryParser.js"></script>
+  <script src="search.js"></script>
+  <script src="config.js"></script>
+  <script src="results.js"></script>
+
+  <script>
+    let lastAfterYear = null;
+    let lastQuery = '';
+
+    //DOM refs 
+    const searchInput     = document.getElementById('search-input');
+    const searchBtn       = document.getElementById('search-btn');
+    const slider          = document.getElementById('year-slider');
+    const dateLabel       = document.getElementById('date-label');
+    const sliderSearchBtn = document.getElementById('slider-search-btn');
+    const copyQueryBtn    = document.getElementById('copy-query-btn');
+    const sliderTooltip   = document.getElementById('slider-tooltip');
+    const categoryBar     = document.getElementById('category-bar');
+    const sliderWrap      = document.getElementById('slider-wrap');
+
+    //Random placeholder
+    const placeholders = ['try: old programming talks', 'try: old vacation footage'];
+    searchInput.placeholder = placeholders[Math.floor(Math.random() * placeholders.length)];
+    const updateSliderFill = () => {
+      const min = parseInt(slider.min, 10);
+      const max = parseInt(slider.max, 10);
+      const val = parseInt(slider.value, 10);
+      const pct = ((val - min) / (max - min)) * 100;
+      slider.style.setProperty('--fill-pct', `${pct}%`);
+
+      const thumbDiameter = 14;
+      const usable = slider.offsetWidth - thumbDiameter;
+      sliderTooltip.style.left = `${(pct / 100) * usable + thumbDiameter / 2}px`;
+      sliderTooltip.textContent = val;
+    };
+
+    const updateDateLabel = () => {
+      const sliderYear = parseInt(slider.value, 10);
+      dateLabel.textContent = lastAfterYear !== null ? `${lastAfterYear} \u2013 ${sliderYear}` : `before ${sliderYear}`;
+    };
+
+    // Search Logic
+    const fetchVideos = query => {
+      renderLoading();
+      fetch('https://google.serper.dev/videos', {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': SERPER_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ q: query, num: 10 })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => renderResults(data.videos || []))
+      .catch(() => renderError('Search failed. Check your API key in config.js or try again.'));
+    };
+
+    const pushHistoryState = () => {
+      const url = new URL(window.location);
+      url.searchParams.set('q', searchInput.value.trim());
+      url.searchParams.set('y', slider.value);
+      window.history.pushState({ q: searchInput.value.trim(), y: slider.value }, '', url);
+    };
+
+    const runSearch = (queryText, skipPushState = false) => {
+      if (typeof queryText === 'string') searchInput.value = queryText;
+      const inputValue = searchInput.value.trim();
+      if (!inputValue) return;
+
+      const parsed = parse(inputValue);
+      lastAfterYear = parsed.afterYear;
+      slider.value = parsed.beforeYear;
+      
+      updateSliderFill();
+      updateDateLabel();
+
+      lastQuery = buildQuery(parsed, parseInt(slider.value, 10));
+      copyQueryBtn.style.display = 'inline-block';
+      if (!skipPushState) pushHistoryState();
+      fetchVideos(lastQuery);
+    };
+
+    const runSliderSearch = (skipPushState = false) => {
+      const inputValue = searchInput.value.trim();
+      if (!inputValue) return;
+
+      const parsed = parse(inputValue);
+      const sliderYear = parseInt(slider.value, 10);
+      lastQuery = buildQuery({ keywords: parsed.keywords, afterYear: lastAfterYear, beforeYear: sliderYear }, sliderYear);
+      copyQueryBtn.style.display = 'inline-block';
+      if (!skipPushState) pushHistoryState();
+      fetchVideos(lastQuery);
+    };
+    const clearPillActiveState = () => {
+      document.querySelectorAll('.yt-pill').forEach(pill => pill.classList.remove('yt-pill-active'));
+    };
+
+    searchBtn.addEventListener('click', () => { clearPillActiveState(); runSearch(); });
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') { clearPillActiveState(); runSearch(); } });
+
+    if (categoryBar) {
+      categoryBar.addEventListener('click', e => {
+        if (e.target && e.target.classList.contains('yt-pill')) {
+          clearPillActiveState();
+          e.target.classList.add('yt-pill-active');
+          runSearch(e.target.getAttribute('data-query'));
+        }
+      });
+    }
+
+    slider.addEventListener('pointerdown', () => sliderWrap.classList.add('is-dragging'));
+    document.addEventListener('pointerup', () => sliderWrap.classList.remove('is-dragging'));
+    
+    slider.addEventListener('input', () => {
+      updateSliderFill();
+      updateDateLabel();
+      sliderSearchBtn.classList.add('visible');
+    });
+
+    sliderSearchBtn.addEventListener('click', runSliderSearch);
+
+    copyQueryBtn.addEventListener('click', () => {
+      if (!lastQuery) return;
+      navigator.clipboard.writeText(lastQuery).then(() => {
+        const originalText = copyQueryBtn.textContent;
+        copyQueryBtn.textContent = 'Copied!';
+        setTimeout(() => copyQueryBtn.textContent = originalText, 1500);
+      });
+    });
+    const initialWelcomeHTML = getResultsEl().innerHTML;
+
+    const restoreWelcomePanel = () => {
+      clearPillActiveState();
+      searchInput.value = '';
+      getResultsEl().innerHTML = initialWelcomeHTML;
+    };
+
+    window.addEventListener('popstate', e => {
+      if (e.state) {
+        searchInput.value = e.state.q || '';
+        if (e.state.y) slider.value = e.state.y;
+        runSearch(searchInput.value, true);
+      } else {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('q')) {
+            searchInput.value = urlParams.get('q');
+            if (urlParams.has('y')) slider.value = urlParams.get('y');
+            runSearch(searchInput.value, true);
+        } else {
+            restoreWelcomePanel();
+        }
+      }
+    });
+
+    const initFromURL = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('q')) {
+        searchInput.value = urlParams.get('q');
+        if (urlParams.has('y')) slider.value = urlParams.get('y');
+        runSearch(searchInput.value, true);
+      } else {
+        updateSliderFill();
+        updateDateLabel();
+      }
+    };
+
+    initFromURL();
+  </script>
+
+</body>
+</html>
