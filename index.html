@@ -136,20 +136,32 @@
     // Search Logic
     const fetchVideos = query => {
       renderLoading();
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       fetch('https://google.serper.dev/videos', {
         method: 'POST',
         headers: {
           'X-API-KEY': SERPER_API_KEY,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ q: query, num: 10 })
+        body: JSON.stringify({ q: query, num: 10 }),
+        signal: controller.signal
       })
       .then(res => {
+        clearTimeout(timeoutId);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then(data => renderResults(data.videos || []))
-      .catch(() => renderError('Search failed. Check your API key in config.js or try again.'));
+      .catch(err => {
+        if (err.name === 'AbortError') {
+          renderError('Search timed out. Please check your network connection.');
+        } else {
+          renderError('Search failed. Check your API key in config.js or try again.');
+        }
+      });
     };
 
     const pushHistoryState = () => {
